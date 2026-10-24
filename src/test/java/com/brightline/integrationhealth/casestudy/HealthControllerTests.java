@@ -13,6 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Integration tests for the HealthController REST API.
+ * Tests both the original /health endpoint (backward compatibility)
+ * and the new /console endpoint (enhanced operations console).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -22,7 +24,7 @@ class HealthControllerTests {
     private MockMvc mockMvc;
 
     @Test
-    @DisplayName("GET /api/integrations/health returns 200 with JSON")
+    @DisplayName("GET /api/integrations/health returns 200 with JSON (backward compatibility)")
     void shouldReturnHealthDashboard() throws Exception {
         mockMvc.perform(get("/api/integrations/health"))
                 .andExpect(status().isOk())
@@ -36,7 +38,7 @@ class HealthControllerTests {
     }
 
     @Test
-    @DisplayName("Each integration has required fields")
+    @DisplayName("Health endpoint contains required fields")
     void shouldContainRequiredFields() throws Exception {
         mockMvc.perform(get("/api/integrations/health"))
                 .andExpect(status().isOk())
@@ -51,13 +53,64 @@ class HealthControllerTests {
     }
 
     @Test
-    @DisplayName("Summary contains overall error rate and generated timestamp")
-    void shouldContainSummaryMetrics() throws Exception {
-        mockMvc.perform(get("/api/integrations/health"))
+    @DisplayName("GET /api/integrations/console returns enhanced operations console")
+    void shouldReturnOperationsConsole() throws Exception {
+        mockMvc.perform(get("/api/integrations/console"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.summary.overallErrorRate").isNumber())
-                .andExpect(jsonPath("$.summary.totalFailures").isNumber())
-                .andExpect(jsonPath("$.summary.totalTimeouts").isNumber())
-                .andExpect(jsonPath("$.summary.generatedAt").isString());
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.summary").exists())
+                .andExpect(jsonPath("$.integrations").isArray())
+                .andExpect(jsonPath("$.recentFailures").isArray())
+                .andExpect(jsonPath("$.refreshedAt").isNumber());
+    }
+
+    @Test
+    @DisplayName("Console endpoint contains enhanced integration health fields")
+    void shouldContainEnhancedIntegrationFields() throws Exception {
+        mockMvc.perform(get("/api/integrations/console"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.integrations[0].successCount").isNumber())
+                .andExpect(jsonPath("$.integrations[0].errorCount").isNumber())
+                .andExpect(jsonPath("$.integrations[0].timeoutCount").isNumber())
+                .andExpect(jsonPath("$.integrations[0].successRate").isNumber())
+                .andExpect(jsonPath("$.integrations[0].unsuccessfulRate").isNumber())
+                .andExpect(jsonPath("$.integrations[0].maxLatencyMs").isNumber())
+                .andExpect(jsonPath("$.integrations[0].latestRequestTimestamp").isString())
+                .andExpect(jsonPath("$.integrations[0].consecutiveFailures").isNumber())
+                .andExpect(jsonPath("$.integrations[0].recommendations").isArray());
+    }
+
+    @Test
+    @DisplayName("Console summary contains total successes and errors")
+    void shouldContainEnhancedSummaryFields() throws Exception {
+        mockMvc.perform(get("/api/integrations/console"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.totalSuccesses").value(43))
+                .andExpect(jsonPath("$.summary.totalErrors").value(12))
+                .andExpect(jsonPath("$.summary.totalTimeouts").value(5))
+                .andExpect(jsonPath("$.summary.totalRequests").value(60));
+    }
+
+    @Test
+    @DisplayName("Console endpoint contains recent failures sorted by timestamp")
+    void shouldContainSortedRecentFailures() throws Exception {
+        mockMvc.perform(get("/api/integrations/console"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recentFailures").isArray())
+                .andExpect(jsonPath("$.recentFailures.length()").value(17));
+    }
+
+    @Test
+    @DisplayName("Failure entries contain integration, timestamp, status, and latency")
+    void shouldContainFailureDetails() throws Exception {
+        mockMvc.perform(get("/api/integrations/console"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recentFailures[0].integration").isString())
+                .andExpect(jsonPath("$.recentFailures[0].timestamp").isString())
+                .andExpect(jsonPath("$.recentFailures[0].status").isString())
+                .andExpect(jsonPath("$.recentFailures[0].statusCode").exists())
+                .andExpect(jsonPath("$.recentFailures[0].latencyMs").isNumber())
+                .andExpect(jsonPath("$.recentFailures[0].consecutiveFailureCount").isNumber());
     }
 }
+
