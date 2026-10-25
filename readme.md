@@ -89,6 +89,7 @@ Example response structure:
 ```
 
 The test suite includes:
+
 - **JSON parsing** — verifies all 60 records load correctly, field mapping, timeout entries with null status codes.
 - **Metric calculations** — success/failure/timeout counting, error rate, average latency for successful requests only.
 - **Health classification** — HEALTHY, DEGRADED, UNHEALTHY thresholds; worst-case status rule; boundary conditions.
@@ -128,11 +129,11 @@ src/
 
 See [SOLUTION_DESIGN.md](SOLUTION_DESIGN.md) for detailed thresholds and rationale.
 
-| Rule | HEALTHY | DEGRADED | UNHEALTHY |
-|------|---------|----------|-----------|
-| Error rate | ≤ 5% | > 5% to ≤ 25% | > 25% |
-| Timeout rate | 0% | > 0% to ≤ 20% | > 20% |
-| Avg latency | ≤ 1000ms | > 1000ms to ≤ 3000ms | > 3000ms |
+| Rule         | HEALTHY  | DEGRADED             | UNHEALTHY |
+| ------------ | -------- | -------------------- | --------- |
+| Error rate   | ≤ 5%     | > 5% to ≤ 25%        | > 25%     |
+| Timeout rate | 0%       | > 0% to ≤ 20%        | > 20%     |
+| Avg latency  | ≤ 1000ms | > 1000ms to ≤ 3000ms | > 3000ms  |
 
 The **worst-case** status from any rule becomes the integration's final status.
 
@@ -147,7 +148,7 @@ The **worst-case** status from any rule becomes the integration's final status.
 
 ## Configuration
 
-| Property | Value | File |
-|----------|-------|------|
-| Server port | 8081 | `application.properties` |
-| Log data file | `data/integration_logs.json` | classpath |
+| Property      | Value                        | File                     |
+| ------------- | ---------------------------- | ------------------------ |
+| Server port   | 8081                         | `application.properties` |
+| Log data file | `data/integration_logs.json` | classpath                |
